@@ -62,14 +62,14 @@ def choose_sensor(sensor_type):
     print "x: "+str(x)+" @ "+str(at)+"[m]"
     print "y: "+str(y)+" @ "+str(at)+"[m]"
 
-    return minimum_distance, maximum_distance, x, y, color
+    return minimum_distance, maximum_distance, x, y, at, color
 
 
 if __name__ == '__main__':
 
     args = rospy.myargv(sys.argv)
     sensor_type = args[1]
-    minimum_distance, maximum_distance, x, y, color = choose_sensor(args[1])
+    minimum_distance, maximum_distance, x, y, at, color = choose_sensor(args[1])
 
     sensor_frame_id = args[2]+"_rgb_optical_frame"
 
@@ -92,38 +92,37 @@ if __name__ == '__main__':
             rate.sleep()
             continue
 
-        pose_stamped = geometry_msgs.msg.PoseStamped()
-        pose_stamped.header.frame_id = sensor_frame_id
-        pose_stamped.pose.orientation.w = 1.0
-        pose_stamped.pose.position.z = minimum_distance + (maximum_distance-minimum_distance)/2.0
-        pose_stamped.pose.position.z = minimum_distance + (maximum_distance-minimum_distance)/2.0
-        pose_transformed = tf2_geometry_msgs.do_transform_pose(pose_stamped, transform)
+        sensor_range_pose = geometry_msgs.msg.PoseStamped()
+        sensor_range_pose.header.frame_id = sensor_frame_id
+        sensor_range_pose.pose.orientation.w = 1.0
+        sensor_range_pose.pose.position.z = minimum_distance + (maximum_distance-minimum_distance)/2.0
+        sensor_range_pose_transformed = tf2_geometry_msgs.do_transform_pose(sensor_range_pose, transform)
+
+        sensor_spec_pose = copy.deepcopy(sensor_range_pose)
+        sensor_spec_pose.pose.position.z = at
+        sensor_spec_pose_transformed = tf2_geometry_msgs.do_transform_pose(sensor_spec_pose, transform)
 
         sensor_range_marker = Marker()
-        sensor_range_marker.header.frame_id = pose_transformed.header.frame_id
+        sensor_range_marker.header.frame_id = sensor_range_pose_transformed.header.frame_id
         sensor_range_marker.header.stamp = rospy.Time.now()
-
         sensor_range_marker.ns = args[2]+"/range/"
         sensor_range_marker.id = 0
-
+        sensor_range_marker.type = 1
         sensor_range_marker.action = Marker.ADD
-
-        sensor_range_marker.pose.position = pose_transformed.pose.position
-        sensor_range_marker.pose.orientation = pose_transformed.pose.orientation
-
+        sensor_range_marker.pose.position = sensor_range_pose_transformed.pose.position
+        sensor_range_marker.pose.orientation = sensor_range_pose_transformed.pose.orientation
         sensor_range_marker.color.r = color[0]
         sensor_range_marker.color.g = color[1]
         sensor_range_marker.color.b = color[2]
         sensor_range_marker.color.a = 0.4
-
         sensor_range_marker.scale.x = x
         sensor_range_marker.scale.y = y
         sensor_range_marker.scale.z = maximum_distance - minimum_distance
 
-        sensor_range_marker.type = 1
-
         sensor_spec_marker = copy.deepcopy(sensor_range_marker)
         sensor_spec_marker.ns = args[2]+"/range/spec"
+        sensor_spec_marker.pose.position = sensor_spec_pose_transformed.pose.position
+        sensor_spec_marker.pose.orientation = sensor_spec_pose_transformed.pose.orientation
         sensor_spec_marker.color.r = 1.0
         sensor_spec_marker.color.g = 1.0
         sensor_spec_marker.color.b = 0.0
