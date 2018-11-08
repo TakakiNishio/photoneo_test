@@ -5,7 +5,7 @@
 $ roslaunch vs087_moveit_config demo.launch 
 ```
 - spawn tf with interactive marker  
-`$ rosrun tf_interactive_marker.py world [sensor_id]`  
+`$ rosrun tf_interactive_marker.py world [sensor_id] [xyz and rpy]`  
 sensor_id: name of tf interactive marker (should be different for each sensor)
 ```
 $ rosrun photoneo_test tf_interactive_marker.py world l1 1.4784 0.0693 0.4358 0.046 0.4315 -3.1227
